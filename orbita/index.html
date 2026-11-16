@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2B1A86">
+<title>ORBITA · Trova l'isola giusta</title>
+<style>
+@font-face{font-family:'OrbDisplay';font-weight:500;src:url(fonts/display-500.woff) format('woff');font-display:swap}
+@font-face{font-family:'OrbDisplay';font-weight:600;src:url(fonts/display-600.woff) format('woff');font-display:swap}
+@font-face{font-family:'OrbBody';font-weight:400;src:url(fonts/body-400.woff) format('woff');font-display:swap}
+@font-face{font-family:'OrbBody';font-weight:500;src:url(fonts/body-500.woff) format('woff');font-display:swap}
+@font-face{font-family:'OrbMono';font-weight:400;src:url(fonts/mono-400.woff) format('woff');font-display:swap}
+:root{
+  --cloud:#fff;--cloud-2:#FBF8F5;--ink:#1D1654;--indigo:#2B1A86;--steel:#655F86;--steel-2:#BEB8E8;--line:#E4DEEA;
+  --violet:#87318C;--magenta:#A6327E;--blue:#306CA0;--coral:#CD786E;--amber:#DB943A;--peach:#F0B98A;
+  --sunset:linear-gradient(160deg,#2B1A86 0%,#87318C 42%,#CD786E 75%,#DB943A 100%);
+  --display:'OrbDisplay','Inter',system-ui,sans-serif;--body:'OrbBody','Inter',system-ui,sans-serif;--mono:'OrbMono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--body);font-size:15.5px;line-height:1.5;color:var(--ink);background:var(--cloud-2);-webkit-font-smoothing:antialiased}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--magenta);outline-offset:3px}
+h1,h2,h3{font-family:var(--display);font-weight:600;letter-spacing:-.02em;line-height:1.06}
+.mono{font-family:var(--mono);font-size:11.5px;letter-spacing:.03em}
+.muted{color:var(--steel)}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+
+/* top bar */
+.bar{position:sticky;top:0;z-index:20;background:rgba(251,248,245,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;align-items:center;justify-content:space-between;height:56px;gap:12px}
+.wm{font-family:var(--display);font-weight:600;letter-spacing:.09em;font-size:15px;text-decoration:none}
+.wm i{display:inline-block;width:.27em;height:.27em;border-radius:50%;background:var(--amber);margin-left:.14em}
+.nav{display:flex;gap:6px}
+.nav a{font-family:var(--mono);font-size:11px;text-decoration:none;padding:6px 10px;border-radius:999px;color:var(--steel)}
+.nav a.on{background:var(--ink);color:#fff}
+
+/* hero */
+.hero{position:relative;overflow:hidden;padding:30px 0 6px}
+.hero h1{font-size:clamp(34px,8vw,56px);letter-spacing:-.035em;max-width:9.5em}
+.hero h1 em{font-style:normal;background:var(--sunset);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{margin-top:12px;color:var(--steel);max-width:30em}
+.orbit{position:absolute;right:-90px;top:-40px;width:340px;color:var(--ink);opacity:.9;pointer-events:none;z-index:0}
+.hero .wrap{position:relative;z-index:1}
+@media (max-width:640px){.hero .orbit{width:220px;right:-110px;top:-70px;opacity:.35}}
+.orbit svg{width:100%;height:auto}
+.o-ring{fill:none;stroke:currentColor;stroke-opacity:.18}
+.o-d{fill:currentColor}
+@media (prefers-reduced-motion:no-preference){.orbit g.spin{transform-origin:200px 200px;animation:spin 90s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}}
+
+/* search card */
+.grid{display:grid;gap:16px;margin:22px 0 40px}
+@media (min-width:900px){.grid{grid-template-columns:400px 1fr;align-items:start}.panel.search{position:sticky;top:72px}}
+.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px}
+.ptop{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.live{display:inline-flex;align-items:center;gap:7px;color:var(--steel)}
+.live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--amber)}
+.lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11.5px;color:var(--steel);margin:16px 0 8px}
+.lbl b{color:var(--ink);font-weight:400}
+textarea{width:100%;min-height:88px;resize:vertical;border:1px solid var(--line);border-radius:12px;padding:12px 13px;background:var(--cloud-2);font-size:15px;line-height:1.45}
+textarea:focus{outline:none;border-color:var(--violet)}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{font-size:13px;padding:6px 11px;border-radius:999px;border:1px solid var(--line);background:#fff;transition:.15s}
+.chip:hover{border-color:var(--steel-2)}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.chip.auto{border-color:var(--magenta);color:var(--magenta)}
+.chip.auto::after{content:" ·AI";font-family:var(--mono);font-size:10px}
+.chip.preset{font-size:12.5px;background:var(--cloud-2)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.f-ricerca{background:var(--indigo)}.f-strategia{background:var(--magenta)}.f-brand{background:var(--coral)}.f-attivazione{background:var(--amber)}
+
+/* dual range */
+.range{position:relative;height:30px}
+.range .track{position:absolute;left:0;right:0;top:13px;height:4px;border-radius:4px;background:var(--line)}
+.range .fill{position:absolute;top:13px;height:4px;border-radius:4px;background:linear-gradient(90deg,var(--indigo),var(--magenta),var(--amber))}
+.range input{position:absolute;inset:0;width:100%;-webkit-appearance:none;appearance:none;background:none;pointer-events:none;height:30px}
+.range input::-webkit-slider-thumb{-webkit-appearance:none;pointer-events:auto;width:22px;height:22px;border-radius:50%;background:#fff;border:2px solid var(--ink);box-shadow:0 1px 4px rgba(29,22,84,.2)}
+.range input::-moz-range-thumb{pointer-events:auto;width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid var(--ink)}
+.count{display:flex;align-items:center;gap:8px;margin:14px 0 4px;font-family:var(--mono);font-size:12px}
+.count::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--amber)}
+.modes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.btn{display:inline-flex;align-items:center;gap:8px;font-family:var(--display);font-weight:500;font-size:14px;padding:10px 16px;border-radius:999px;border:1.5px solid var(--ink);text-decoration:none;white-space:nowrap}
+.btn.solid{background:var(--ink);color:#fff}
+.btn.grad{background:var(--sunset);border-color:transparent;color:#fff}
+.btn.sm{font-size:12.5px;padding:7px 12px;font-family:var(--mono);font-weight:400}
+.btn.on{background:var(--ink);color:#fff}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+
+/* results */
+.rhead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.rhead h2{font-size:24px}
+.card{display:grid;grid-template-columns:1fr auto;gap:6px 14px;padding:16px 0;border-top:1px solid var(--line);text-decoration:none;color:inherit}
+.card:first-of-type{border-top:0}
+.card h3{font-size:18px}
+.card .meta{font-size:13px;color:var(--steel)}
+.card .why{grid-column:1/-1;font-size:13.5px;line-height:1.45}
+.card .why li{list-style:none;padding-left:16px;position:relative;margin-top:3px}
+.card .why li::before{content:"→";position:absolute;left:0;color:var(--magenta)}
+.card .right{text-align:right}
+.score{font-family:var(--display);font-size:22px;font-weight:600;letter-spacing:-.02em}
+.score small{font-family:var(--mono);font-size:10px;color:var(--steel);display:block;font-weight:400;letter-spacing:.03em}
+.pal{display:flex;gap:4px;margin-top:8px}
+.pal span{width:26px;height:14px;border-radius:4px}
+.tag{display:inline-block;font-family:var(--mono);font-size:10.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--steel);margin-right:4px}
+.tag.net{border-color:var(--amber);color:#8a5a14;background:#FDF3E6}
+.card.out{opacity:.5}
+.sep{font-family:var(--mono);font-size:11.5px;color:var(--steel);padding:18px 0 4px;border-top:1px dashed var(--line)}
+.empty{padding:28px 0;color:var(--steel)}
+
+/* intelligence */
+.prop{border-radius:18px;overflow:hidden;border:1px solid var(--line);background:#fff;margin-bottom:16px}
+.prop .ph{background:var(--sunset);color:#fff;display:flex;justify-content:space-between;padding:12px 18px}
+.prop .pb{padding:6px 18px 18px}
+.prop h3{font-size:21px;margin:12px 0 4px}
+.pr{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:13px 0;border-top:1px solid var(--line)}
+.pr b{font-family:var(--display);font-weight:600}
+.pr a{font-size:13.5px;color:var(--steel)}
+.pr.tot{border-top:1.5px solid var(--ink)}
+.disc{font-family:var(--mono);font-size:11px;color:var(--steel);margin-top:12px;line-height:1.5}
+
+/* landing */
+.lhero{background:var(--sunset);color:#fff;position:relative;overflow:hidden}
+.lhero .wrap{padding-top:22px;padding-bottom:34px;position:relative;z-index:2}
+.lhero .back{font-family:var(--mono);font-size:12px;text-decoration:none;opacity:.85}
+.lhero h1{font-size:clamp(40px,10vw,76px);letter-spacing:-.04em;margin-top:30px}
+.lhero .kick{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.85;margin-top:28px}
+.lhero p{font-size:18px;max-width:28em;margin-top:12px;opacity:.95}
+.lhero .tags{margin-top:18px;display:flex;flex-wrap:wrap;gap:6px}
+.lhero .tags span{font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3)}
+.lhero .orbit{color:#fff;opacity:.35;top:auto;bottom:-120px;right:-110px;width:380px}
+.sec{padding:28px 0;border-bottom:1px solid var(--line)}
+.sec h2{font-size:26px;margin-bottom:12px}
+.sec h2 em{font-family:Georgia,serif;font-style:italic;font-weight:400;color:var(--magenta)}
+.whybox{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+.whybox li{list-style:none;padding:8px 0 8px 22px;border-top:1px solid var(--line);position:relative}
+.whybox li:first-child{border-top:0}
+.whybox li::before{content:"";position:absolute;left:2px;top:15px;width:8px;height:8px;border-radius:50%;background:var(--magenta)}
+.meter{height:6px;border-radius:6px;background:var(--line);margin:10px 0 4px;overflow:hidden}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--indigo),var(--magenta),var(--amber))}
+.filiera{display:grid;gap:10px}
+@media (min-width:700px){.filiera{grid-template-columns:repeat(4,1fr)}}
+.fil{border-radius:14px;padding:14px;font-size:14px}
+.fil b{display:block;font-family:var(--display);font-size:15px;margin-bottom:6px}
+.fil.ricerca{background:#EEEBFA}.fil.strategia{background:#F6E6F0}.fil.brand{background:#FBE9E4}.fil.attivazione{background:#FCF0E0}
+.fil.off{opacity:.35}
+.case{margin-top:18px}
+.slides{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(200px,1fr);gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px}
+.slide{scroll-snap-align:start;aspect-ratio:1/1;border-radius:14px;padding:14px;display:flex;flex-direction:column;justify-content:space-between;border:1px solid var(--line);background:#fff;font-size:14px;line-height:1.35}
+.slide .k{font-family:var(--mono);font-size:10.5px;color:var(--steel)}
+.slide b{font-family:var(--display);font-size:20px;font-weight:600;letter-spacing:-.015em;line-height:1.1;display:block;margin-bottom:6px}
+.slide.s1{background:var(--indigo);color:#fff;border-color:var(--indigo)}.slide.s1 .k{color:var(--steel-2)}
+.slide.s2{background:#FCF0E0}.slide.s3{background:#EEEBFA}
+.cred{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-top:10px}
+.cred dl{display:grid;grid-template-columns:minmax(90px,auto) 1fr;gap:5px 14px;font-size:14px}
+.cred dt{color:var(--steel)}
+.cred .src{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:13px}
+.ghost{border:1.5px dashed var(--steel-2);border-radius:14px;padding:18px;color:var(--steel)}
+.cta{position:sticky;bottom:0;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:12px 0 calc(12px + env(safe-area-inset-bottom))}
+.cta .wrap{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.foot{padding:22px 0 40px;font-family:var(--mono);font-size:11px;color:var(--steel);line-height:1.6}
+
+/* censimento */
+table{width:100%;border-collapse:collapse;font-size:13.5px;background:#fff;border-radius:14px;overflow:hidden}
+th,td{text-align:left;padding:10px 12px;border-top:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-weight:400;font-size:11px;color:var(--steel);border-top:0;background:var(--cloud-2)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:14px}
+.bar5{display:inline-block;width:60px;height:5px;border-radius:5px;background:var(--line);vertical-align:middle;overflow:hidden;margin-right:6px}
+.bar5 i{display:block;height:100%;background:var(--magenta)}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:13.5px;opacity:0;transition:.25s;z-index:50;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<header class="bar"><div class="wrap">
+  <a class="wm" href="#/">ORBITA<i></i></a>
+  <nav class="nav"><a href="#/" data-r="cerca">Cerca</a><a href="#/censimento" data-r="censimento">Censimento</a></nav>
+</div></header>
+<main id="app"></main>
+<div class="toast" id="toast"></div>
+
+<script src="data.js"></script>
+<script>
+(function () {
+"use strict";
+
+/* ── vocabolario ─────────────────────────────────────────────── */
+const SERVIZI = {
+  ricerca:{l:"Ricerca",f:"ricerca"}, audit:{l:"Audit",f:"ricerca"}, dati:{l:"Dati e analytics",f:"ricerca"},
+  strategia:{l:"Strategia",f:"strategia"}, gestione:{l:"Gestione e PM",f:"strategia"},
+  brand:{l:"Branding",f:"brand"}, design:{l:"Design",f:"brand"}, comunicazione:{l:"Comunicazione",f:"brand"},
+  adv:{l:"Campagne adv",f:"brand"}, social:{l:"Social",f:"brand"}, influencer:{l:"Influencer",f:"brand"},
+  pr:{l:"PR",f:"brand"}, publicaffairs:{l:"Public affairs",f:"brand"}, digital:{l:"Digital e web",f:"brand"},
+  editoria:{l:"Contenuti e copy",f:"brand"},
+  eventi:{l:"Eventi",f:"attivazione"}, produzione:{l:"Video e shooting",f:"attivazione"}
+};
+const FILIERA = {
+  ricerca:{l:"Ricerca e audit",w:.15}, strategia:{l:"Strategia e numeri",w:.25},
+  brand:{l:"Brand e comunicazione",w:.35}, attivazione:{l:"Attivazione e produzione",w:.40}
+};
+const SETTORI = {
+  sport:"Sport", moda:"Moda", food:"Food", drink:"Drink e vino", design:"Design e arredo", lusso:"Lusso",
+  finanza:"Finanza e assicurazioni", retail:"Retail e GDO", cultura:"Cultura", tech:"Tech", auto:"Automotive",
+  salute:"Salute", pubblico:"Pubblico e no profit", energia:"Energia", immobiliare:"Immobiliare", "eventi-fiere":"Fiere"
+};
+// Stems matched against lower-cased, accent-free text: cheap, offline and predictable.
+const KW_SERVIZI = {
+  ricerca:/\b(ricerc|sondagg|indagin|mercato|consumator|target|insight|survey|focus group|opinion)/,
+  audit:/\b(audit|verific|diagnos|check.?up|valutazion)/,
+  dati:/\b(dati|data|analytic|kpi|dashboard|misur|crm)/,
+  strategia:/\b(strateg|posizionament|piano|business plan|lancia|lancio|go.?to.?market|crescit|espansion|internazional)/,
+  gestione:/\b(gestion|coordin|project manag|organizz|process|trasformazion)/,
+  brand:/\b(brand|marchio|logo|identit|rebrand|naming|nome)/,
+  design:/\b(design|grafic|packaging|wayfinding|allestiment|visual|font|tipograf|catalogo)/,
+  comunicazione:/\b(comunica|messagg|storytelling|narraz|racconta|tono di voce)/,
+  adv:/\b(campagn|pubblicit|spot|affission|ooh|outdoor|tv|radio|adv)/,
+  social:/\b(social|instagram|tiktok|linkedin|community|follower|engagement|contenut)/,
+  influencer:/\b(influencer|creator|talent|ambassador)/,
+  pr:/\b(pr\b|ufficio stampa|stampa|giornalist|media relation|reputaz|crisi|notoriet|visibilit)/,
+  publicaffairs:/\b(istituzion|lobby|public affairs|regolat|governo|advocacy)/,
+  digital:/\b(sito|web|ecommerce|e-commerce|app\b|digital|online|seo|ux|configurator)/,
+  editoria:/\b(copy|testi|editorial|magazine|rivista|newsletter|libro|podcast)/,
+  eventi:/\b(event|inaugurazion|cerimoni|fiera|fuorisalone|design week|fashion week|lancio stampa|esperienz|attivazion|temporary|pop.?up|mostra)/,
+  produzione:/\b(video|shooting|foto|film|spot|riprese|produzion|documentar|reel)/
+};
+const KW_SETTORI = {
+  sport:/\b(sport|calcio|squadr|club|olimpi|atlet|palestr|fitness|bike|outdoor)/, moda:/\b(moda|fashion|abbigliament|sneaker|collezion)/,
+  food:/\b(food|cibo|ristorant|alimentar|caffe|pasta|dolci|gelat)/, drink:/\b(vino|cantin|birra|drink|spirit|bevand|cocktail)/,
+  design:/\b(arred|mobil|design week|salone|interior|cucin)/, lusso:/\b(lusso|luxury|gioiell|profum|orolog)/,
+  finanza:/\b(banca|finanz|assicura|fintech|invest|pagament)/, retail:/\b(retail|negozi|gdo|supermercat|store|punto vendita)/,
+  cultura:/\b(museo|cultur|teatro|musica|arte|mostra|festival)/, tech:/\b(tech|software|saas|startup|ai\b|intelligenza artificiale|app\b)/,
+  auto:/\b(auto|moto|mobilit|veicol)/, salute:/\b(salute|ospedal|pharma|farmac|benessere|medic)/,
+  pubblico:/\b(comune|pubblic|no.?profit|onlus|fondazion|5x1000|sociale)/, energia:/\b(energia|utility|sostenib|esg|green|clima)/,
+  immobiliare:/\b(immobil|casa|real estate|residenz)/
+};
+const PRESET = [
+  "Dobbiamo lanciare un nuovo prodotto a Milano e non abbiamo ancora una strategia.",
+  "Rebranding del marchio: logo, identita' e packaging.",
+  "Ci serve un video per la campagna di lancio e contenuti per i social.",
+  "Un evento per il Fuorisalone che faccia parlare la stampa.",
+  "Vogliamo capire il nostro mercato prima di investire: ricerca e audit."
+];
+
+/* ── stato ─────────────────────────────────────────────────────── */
+const LS = "orbita.extra.v1", SS = "orbita.query.v1";
+function loadExtra(){ try{ return JSON.parse(localStorage.getItem(LS)||"[]"); }catch(e){ return []; } }
+function isole(){
+  const map = new Map(window.ORBITA_ISOLE.map(i=>[i.id,i]));
+  loadExtra().forEach(i=>{ if(i && i.id) map.set(i.id, Object.assign({stato:"censimento",casi:[],servizi:[],settori:[]}, i)); });
+  return [...map.values()];
+}
+const Q = Object.assign({testo:"",servizi:[],settori:[],min:10,max:40,rete:"tutte",mode:"lista",seed:0},
+  (()=>{ try{ return JSON.parse(sessionStorage.getItem(SS)||"{}"); }catch(e){ return {}; } })());
+function save(){ sessionStorage.setItem(SS, JSON.stringify(Q)); }
+
+/* ── utilita' ─────────────────────────────────────────────────── */
+const $ = (s,el=document)=>el.querySelector(s);
+const esc = s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = s=>String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/'/g," ");
+const k = n=>n==null?"n.d.":(n>=1000?(n/1000).toLocaleString("it-IT")+" mln €":n+" mila €");
+function toast(t){ const el=$("#toast"); el.textContent=t; el.classList.add("show"); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove("show"),2200); }
+function copy(t,msg){ (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast(msg),()=>{ prompt("Copia il testo:",t); }); }
+function filiereOf(i){ return [...new Set((i.servizi||[]).map(s=>SERVIZI[s]&&SERVIZI[s].f).filter(Boolean))]; }
+function palette(i){ const c={ricerca:"#2B1A86",strategia:"#A6327E",brand:"#CD786E",attivazione:"#DB943A"}; const f=filiereOf(i); return (f.length?f:["brand"]).map(x=>c[x]); }
+function completezza(i){
+  let p=0; if(i.pitch)p+=20; if((i.servizi||[]).length)p+=20; if((i.settori||[]).length)p+=10; if(i.budgetMin!=null)p+=15;
+  if(i.sito)p+=10; p+=Math.min(25,(i.casi||[]).length*12.5); return Math.round(p);
+}
+
+/* ── lettura della sfida ───────────────────────────────────────── */
+function leggi(testo){
+  const t=norm(testo), s=[], st=[];
+  for(const key in KW_SERVIZI) if(KW_SERVIZI[key].test(t)) s.push(key);
+  for(const key in KW_SETTORI) if(KW_SETTORI[key].test(t)) st.push(key);
+  // A launch with no named channel needs the whole chain, not just strategy.
+  if(/\blancia|\blancio/.test(t) && !s.some(x=>["pr","eventi","adv","social"].includes(x))) s.push("pr","comunicazione");
+  return {servizi:s, settori:st};
+}
+function bisogni(){
+  const a=leggi(Q.testo);
+  return { servizi:[...new Set([...Q.servizi,...a.servizi])], settori:[...new Set([...Q.settori,...a.settori])], auto:a };
+}
+
+/* ── motore di match ───────────────────────────────────────────── */
+function valuta(i,need){
+  const why=[], S=i.servizi||[], casi=i.casi||[];
+  let sv=0, se=0, bu=0, ca=0;
+  const hit=need.servizi.filter(x=>S.includes(x));
+  if(need.servizi.length){
+    sv=hit.length/need.servizi.length;
+    if(hit.length) why.push(`Copre ${hit.length} di ${need.servizi.length} servizi richiesti: ${hit.map(x=>SERVIZI[x].l).join(", ")}`);
+  } else sv=S.length?.5:0;
+  const sHit=need.settori.filter(x=>(i.settori||[]).includes(x));
+  if(need.settori.length){ se=sHit.length?1:0; if(sHit.length) why.push(`Conosce il settore: ${sHit.map(x=>SETTORI[x]).join(", ")}`); }
+  let best=null,bs=0;
+  casi.forEach(c=>{
+    let x=0; (c.servizi||[]).forEach(s=>{ if(need.servizi.includes(s)) x+=1; }); (c.settori||[]).forEach(s=>{ if(need.settori.includes(s)) x+=1.5; });
+    if(x>bs){bs=x;best=c;}
+  });
+  if(best){ ca=Math.min(1,bs/3); why.push(`Ha gia' fatto qualcosa di simile: ${best.titolo} per ${best.cliente}${best.anno?" ("+best.anno+")":""}`); }
+  else if(casi.length) ca=.2;
+  let fuori=false;
+  if(i.budgetMin==null){ bu=.4; }
+  else if(i.budgetMin<=Q.max){ bu=1; why.push(`Entra nel budget: fascia d'ingresso stimata da ${k(i.budgetMin)}`); }
+  else if(i.budgetMin<=Q.max*1.4){ bu=.4; why.push(`Poco sopra il budget: parte da ~${k(i.budgetMin)}`); }
+  else { fuori=true; }
+  const w = need.settori.length ? {sv:.45,se:.15,bu:.2,ca:.2} : {sv:.55,se:0,bu:.22,ca:.23};
+  let score=Math.round(100*(w.sv*sv+w.se*se+w.bu*bu+w.ca*ca));
+  if(need.servizi.length && !hit.length) score=Math.round(score*.35);
+  // Thin profiles should not outrank documented ones on a tie.
+  if(completezza(i)<50) score=Math.round(score*.8);
+  return {i,score,why,fuori,best};
+}
+function risultati(){
+  const need=bisogni();
+  let list=isole().filter(i=>Q.rete==="tutte"||i.stato===Q.rete).map(i=>valuta(i,need));
+  const dentro=list.filter(r=>!r.fuori&&r.score>=25).sort((a,b)=>b.score-a.score);
+  const fuori=list.filter(r=>r.fuori&&r.score>=25).sort((a,b)=>b.score-a.score);
+  return {need,dentro,fuori,all:list};
+}
+
+/* ── Orbita Intelligence: compone la squadra ───────────────────── */
+function componi(){
+  const {need,all}=risultati();
+  const servizi=need.servizi.length?need.servizi:["strategia","brand","pr"];
+  const aree=[...new Set(servizi.map(s=>SERVIZI[s].f))];
+  const W=aree.reduce((a,f)=>a+FILIERA[f].w,0), usati=new Set(), righe=[];
+  aree.forEach(f=>{
+    const qui=servizi.filter(s=>SERVIZI[s].f===f), quota=Q.max*FILIERA[f].w/W;
+    const cand=all.filter(r=>!usati.has(r.i.id)&&r.i.budgetMin!=null&&r.i.budgetMin<=quota*1.15)
+      .map(r=>{const S=r.i.servizi||[];return {r,c:qui.filter(s=>S.includes(s)).length,focus:S.filter(s=>SERVIZI[s]&&SERVIZI[s].f===f).length/Math.max(1,S.length)};})
+      .filter(x=>x.c>0).sort((a,b)=>(b.c+b.focus)-(a.c+a.focus)||b.r.score-a.r.score);
+    if(!cand.length){ righe.push({f,qui,i:null,quota:Math.round(quota)}); return; }
+    const x=cand[0].r.i; usati.add(x.id);
+    righe.push({f,qui,i:x,quota:Math.max(x.budgetMin,Math.round(quota))});
+  });
+  const tot=righe.reduce((a,r)=>a+r.quota,0);
+  return {righe,tot,settimane:4+3*aree.length,need};
+}
+
+/* ── brief ─────────────────────────────────────────────────────── */
+function brief(isola){
+  const n=bisogni();
+  return [
+    `Brief ORBITA${isola?" per "+isola.nome:""}`,
+    ``,
+    `La sfida: ${Q.testo||"(da descrivere)"}`,
+    `Servizi: ${n.servizi.map(s=>SERVIZI[s].l).join(", ")||"da definire"}`,
+    `Settore: ${n.settori.map(s=>SETTORI[s]).join(", ")||"n.d."}`,
+    `Budget: ${Q.min}-${Q.max} mila €`,
+    ``,
+    `Chiediamo: approccio, un caso simile, tempi e una stima.`,
+    `Contatto diretto tra azienda e isola: ORBITA non e' nel mezzo.`
+  ].join("\n");
+}
+
+/* ── viste ─────────────────────────────────────────────────────── */
+const ORBIT = `<svg viewBox="0 0 400 400" aria-hidden="true"><g class="spin">
+<circle class="o-ring" cx="200" cy="200" r="70"/><circle class="o-ring" cx="200" cy="200" r="125"/><circle class="o-ring" cx="200" cy="200" r="185"/>
+${[...Array(28)].map((_,n)=>{const r=[70,125,185][n%3],a=n*137.5*Math.PI/180;return `<circle class="o-d" cx="${(200+r*Math.cos(a)).toFixed(1)}" cy="${(200+r*Math.sin(a)).toFixed(1)}" r="${[5,4,2.6][n%3]}" opacity="${[1,.7,.4][n%3]}"/>`}).join("")}
+</g><circle cx="200" cy="200" r="30" fill="url(#g)"/><defs><radialGradient id="g"><stop offset="0" stop-color="#DB943A"/><stop offset="1" stop-color="#87318C"/></radialGradient></defs></svg>`;
+
+function viewCerca(){
+  const a=leggi(Q.testo);
+  const chipS=Object.keys(SERVIZI).map(s=>{
+    const on=Q.servizi.includes(s), au=!on&&a.servizi.includes(s);
+    return `<button class="chip${on?" on":""}${au?" auto":""}" data-s="${s}"><span class="dot f-${SERVIZI[s].f}"></span>${SERVIZI[s].l}</button>`;
+  }).join("");
+  const chipT=Object.keys(SETTORI).filter(x=>x!=="eventi-fiere").map(s=>{
+    const on=Q.settori.includes(s), au=!on&&a.settori.includes(s);
+    return `<button class="chip${on?" on":""}${au?" auto":""}" data-t="${s}">${SETTORI[s]}</button>`;
+  }).join("");
+  return `
+  <section class="hero"><div class="wrap">
+    <div class="orbit">${ORBIT}</div>
+    <p class="mono muted">MILANO E DINTORNI · ${isole().length} ISOLE MAPPATE</p>
+    <h1>Un problema vero. <em>Le persone giuste.</em></h1>
+    <p>Scrivi la sfida, regola il budget: ORBITA incrocia servizi, settore e casi e ti dice chi l'ha gia' fatto. Contatto diretto, nessun intermediario.</p>
+  </div></section>
+  <div class="wrap grid">
+    <div class="panel search">
+      <div class="ptop"><span class="mono">Cerca</span><span class="mono live">in diretta</span></div>
+      <textarea id="testo" placeholder="Es. Dobbiamo lanciare un nuovo prodotto a Milano e non abbiamo ancora una strategia.">${esc(Q.testo)}</textarea>
+      <div class="chips" style="margin-top:8px">${PRESET.map((p,n)=>`<button class="chip preset" data-p="${n}">${esc(p.split(":")[0].replace(/\.$/,""))}</button>`).join("")}</div>
+      <div class="lbl"><span>Servizi <span class="muted">(magenta = letti dalla sfida)</span></span></div>
+      <div class="chips" id="cs">${chipS}</div>
+      <div class="lbl"><span>Budget</span><b id="bl">${Q.min}–${Q.max} mila €</b></div>
+      <div class="range"><div class="track"></div><div class="fill" id="bf"></div>
+        <input type="range" id="bmin" min="0" max="250" step="1" value="${Q.min}" aria-label="Budget minimo">
+        <input type="range" id="bmax" min="0" max="250" step="1" value="${Q.max}" aria-label="Budget massimo"></div>
+      <div class="lbl"><span>Settore</span></div>
+      <div class="chips" id="ct">${chipT}</div>
+      <div class="lbl"><span>Isole</span></div>
+      <div class="seg">${[["tutte","Tutte"],["network","Network di Filippo"],["censimento","Censimento"]].map(([v,l])=>`<button class="btn sm${Q.rete===v?" on":""}" data-rete="${v}">${l}</button>`).join("")}</div>
+      <div class="count" id="cnt"></div>
+      <div class="modes">
+        <button class="btn${Q.mode==="lista"?" solid":""}" data-mode="lista">Mostrami le aziende</button>
+        <button class="btn${Q.mode==="intel"?" grad":""}" data-mode="intel">Orbita Intelligence</button>
+        <button class="btn${Q.mode==="sorpresa"?" solid":""}" data-mode="sorpresa">Sorprendimi</button>
+      </div>
+    </div>
+    <div id="res"></div>
+  </div>`;
+}
+
+function cardHTML(r,out){
+  const i=r.i;
+  return `<a class="card${out?" out":""}" href="#/isola/${encodeURIComponent(i.id)}">
+    <div><h3>${esc(i.nome)}</h3>
+      <div class="meta">${esc(i.tipo)}${i.citta?" · "+esc(i.citta):""}</div>
+      <div style="margin-top:6px"><span class="tag${i.stato==="network"?" net":""}">${i.stato==="network"?"network":"censimento"}</span>${(i.casi||[]).length?`<span class="tag">${i.casi.length} casi</span>`:""}</div>
+      <div class="pal">${palette(i).map(c=>`<span style="background:${c}"></span>`).join("")}</div>
+    </div>
+    <div class="right"><div class="score">${r.score}<small>MATCH</small></div><div class="mono muted" style="margin-top:6px">da ${k(i.budgetMin)}</div></div>
+    ${r.why.length?`<ul class="why">${r.why.slice(0,3).map(w=>`<li>${esc(w)}</li>`).join("")}</ul>`:""}
+  </a>`;
+}
+
+function renderRes(){
+  const box=$("#res"); if(!box) return;
+  const R=risultati();
+  $("#cnt").textContent=`${R.dentro.length} isole corrispondono`;
+  $("#bl").textContent=`${Q.min}–${Q.max} mila €`;
+  const f=$("#bf"); f.style.left=(Q.min/250*100)+"%"; f.style.width=((Q.max-Q.min)/250*100)+"%";
+  if(Q.mode==="intel"){
+    const P=componi(); const t=Q.testo?Q.testo.split(/[.!?]/)[0]:"Il tuo progetto";
+    box.innerHTML=`<div class="prop"><div class="ph"><span class="mono">Proposta ORBITA</span><span class="mono live" style="color:#fff">Orbita Intelligence</span></div>
+      <div class="pb"><h3>${esc(t)}</h3>
+      ${P.righe.map(r=>`<div class="pr"><b><span class="dot f-${r.f}"></span>${FILIERA[r.f].l}</b><span class="mono">${r.i?k(r.quota):"—"}</span>
+        ${r.i?`<a href="#/isola/${encodeURIComponent(r.i.id)}">${esc(r.i.nome)}, ${esc(r.i.tipo.toLowerCase())} · ${r.qui.map(s=>SERVIZI[s].l).join(", ")}</a>`:`<span class="muted" style="font-size:13.5px">Nessuna isola in budget per ${r.qui.map(s=>SERVIZI[s].l).join(", ")}: alza il budget o riduci il perimetro.</span>`}</div>`).join("")}
+      <div class="pr tot"><b>Totale</b><b>${k(P.tot)}</b><span class="muted" style="font-size:13.5px">circa ${P.settimane} settimane</span></div>
+      <div class="modes"><button class="btn grad" id="pitch">Fai pitchare le isole</button><button class="btn" data-mode="lista">Modifica</button></div>
+      <p class="disc">Bozza calcolata da regole, non una promessa: quote divise per filiera sul budget massimo, fasce d'ingresso stimate. ${P.tot>Q.max?"Supera il budget: alcune isole hanno una soglia minima piu' alta della quota.":""}</p>
+      </div></div>`;
+    $("#pitch").onclick=()=>copy(brief(null)+"\n\nSquadra proposta:\n"+P.righe.filter(r=>r.i).map(r=>`- ${FILIERA[r.f].l}: ${r.i.nome} (${k(r.quota)})`).join("\n"),"Brief copiato: incollalo nella mail alle isole");
+    return;
+  }
+  if(Q.mode==="sorpresa"){
+    const top=new Set(R.dentro.slice(0,5).map(r=>r.i.id));
+    const pool=R.all.filter(r=>!top.has(r.i.id)&&(r.i.casi||[]).length);
+    const pick=pool[(Q.seed||0)%Math.max(1,pool.length)];
+    box.innerHTML=`<div class="panel"><div class="rhead"><h2>Un'isola che non cercavi</h2><button class="btn sm" id="again">Un'altra</button></div>${pick?cardHTML(pick):`<p class="empty">Niente da proporre.</p>`}</div>`;
+    $("#again").onclick=()=>{ Q.seed=(Q.seed||0)+1; save(); renderRes(); };
+    return;
+  }
+  const n=R.need;
+  box.innerHTML=`<div class="panel">
+    <div class="rhead"><h2>Le isole</h2><span class="mono muted">${Math.min(R.dentro.length,12)} su ${R.dentro.length}</span></div>
+    ${!Q.testo&&!n.servizi.length?`<p class="mono muted" style="margin-bottom:6px">Scrivi la sfida o tocca un servizio: la lista si riordina.</p>`:""}
+    ${R.dentro.slice(0,12).map(r=>cardHTML(r)).join("")||`<p class="empty">Nessuna isola dentro questo budget. Prova ad allargarlo o a togliere un servizio.</p>`}
+    ${R.fuori.length?`<div class="sep">FUORI BUDGET · ${R.fuori.length}</div>${R.fuori.slice(0,4).map(r=>cardHTML(r,true)).join("")}`:""}
+  </div>`;
+}
+
+function bindCerca(){
+  const ta=$("#testo");
+  ta.oninput=()=>{ Q.testo=ta.value; save(); clearTimeout(bindCerca.t); bindCerca.t=setTimeout(()=>{ refreshChips(); renderRes(); },180); };
+  document.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{ Q.testo=PRESET[+b.dataset.p]; ta.value=Q.testo; save(); refreshChips(); renderRes(); });
+  $("#cs").onclick=e=>{ const b=e.target.closest("[data-s]"); if(!b) return; const s=b.dataset.s; Q.servizi=Q.servizi.includes(s)?Q.servizi.filter(x=>x!==s):[...Q.servizi,s]; save(); refreshChips(); renderRes(); };
+  $("#ct").onclick=e=>{ const b=e.target.closest("[data-t]"); if(!b) return; const s=b.dataset.t; Q.settori=Q.settori.includes(s)?Q.settori.filter(x=>x!==s):[...Q.settori,s]; save(); refreshChips(); renderRes(); };
+  const mn=$("#bmin"), mx=$("#bmax");
+  const onR=()=>{ let a=+mn.value,b=+mx.value; if(a>b-1){ if(document.activeElement===mn) a=b-1; else b=a+1; } mn.value=Q.min=Math.max(0,a); mx.value=Q.max=b; save(); renderRes(); };
+  mn.oninput=mx.oninput=onR;
+  document.querySelectorAll("[data-rete]").forEach(b=>b.onclick=()=>{ Q.rete=b.dataset.rete; save(); route(); });
+  document.addEventListener("click",modeClick);
+  renderRes();
+}
+function modeClick(e){ const b=e.target.closest("[data-mode]"); if(!b||!$("#res")) return; Q.mode=b.dataset.mode; save();
+  document.querySelectorAll(".modes [data-mode]").forEach(x=>{ x.className="btn"+(x.dataset.mode===Q.mode?(Q.mode==="intel"?" grad":" solid"):""); });
+  renderRes(); if(innerWidth<900) $("#res").scrollIntoView({behavior:"smooth"}); }
+function refreshChips(){
+  const a=leggi(Q.testo);
+  document.querySelectorAll("[data-s]").forEach(b=>{ const s=b.dataset.s,on=Q.servizi.includes(s); b.classList.toggle("on",on); b.classList.toggle("auto",!on&&a.servizi.includes(s)); });
+  document.querySelectorAll("[data-t]").forEach(b=>{ const s=b.dataset.t,on=Q.settori.includes(s); b.classList.toggle("on",on); b.classList.toggle("auto",!on&&a.settori.includes(s)); });
+}
+
+function viewIsola(id){
+  const i=isole().find(x=>x.id===id);
+  if(!i) return `<div class="wrap"><p class="empty">Isola non trovata. <a href="#/">Torna alla ricerca</a></p></div>`;
+  const need=bisogni(), haQ=!!(Q.testo||need.servizi.length), r=valuta(i,need), F=filiereOf(i);
+  const contatto=i.sito||("https://www.google.com/search?q="+encodeURIComponent(i.nome+" "+(i.citta||"Milano")));
+  return `
+  <section class="lhero"><div class="orbit">${ORBIT}</div><div class="wrap">
+    <a class="back" href="#/">← Torna alle isole</a>
+    <div class="kick">${esc(i.tipo)}${i.citta?" · "+esc(i.citta):""}${i.zona?" · "+esc(i.zona):""}</div>
+    <h1>${esc(i.nome)}</h1>
+    ${i.pitch?`<p>${esc(i.pitch)}</p>`:""}
+    <div class="tags"><span>${i.stato==="network"?"Network di Filippo":"Censimento pubblico"}</span>
+      <span>Da ${k(i.budgetMin)}${i.budgetMin!=null?" (stima)":""}</span>${i.dimensione?`<span>${esc(i.dimensione)}</span>`:""}<span>${(i.casi||[]).length} casi</span></div>
+  </div></section>
+  <div class="wrap">
+    ${haQ?`<section class="sec"><h2>Perche' per <em>la tua sfida.</em></h2>
+      <div class="whybox"><div class="mono muted">MATCH ${r.score}/100${r.fuori?" · FUORI BUDGET":""}</div><div class="meter"><i style="width:${r.score}%"></i></div>
+      <ul>${(r.why.length?r.why:["Nessun punto di contatto forte con la sfida attuale: guardala come alternativa."]).map(w=>`<li>${esc(w)}</li>`).join("")}</ul>
+      ${Q.testo?`<p class="mono muted" style="margin-top:10px">Sfida: "${esc(Q.testo)}"</p>`:""}</div></section>`:""}
+    <section class="sec"><h2>Dove sta <em>nella filiera.</em></h2>
+      <div class="filiera">${Object.keys(FILIERA).map(f=>{const s=(i.servizi||[]).filter(x=>SERVIZI[x]&&SERVIZI[x].f===f);return `<div class="fil ${f}${s.length?"":" off"}"><b>${FILIERA[f].l}</b>${s.length?s.map(x=>SERVIZI[x].l).join(" · "):"—"}</div>`}).join("")}</div>
+      ${(i.settori||[]).length?`<p style="margin-top:12px">${i.settori.map(s=>`<span class="tag">${esc(SETTORI[s]||s)}</span>`).join("")}</p>`:""}
+    </section>
+    <section class="sec"><h2>I <em>casi.</em></h2>
+      ${(i.casi||[]).length?i.casi.map((c,n)=>`<div class="case">
+        <div class="slides">
+          <div class="slide s1"><span class="k">1/3 · ${esc(c.anno||"caso")}</span><div><b>${esc(c.titolo)}</b>${esc(c.cliente)}</div></div>
+          <div class="slide s2"><span class="k">2/3 · Il problema</span><div><b>La sfida</b>${esc(c.sfida||"—")}</div></div>
+          <div class="slide s3"><span class="k">3/3 · Chi l'ha fatto</span><div><b>Cosa e' stato fatto</b>${esc(c.cosa)}</div></div>
+        </div>
+        <div class="cred"><div class="mono muted" style="margin-bottom:8px">SCHEDA CREDITI</div>
+          <dl>${Object.entries(c.crediti||{}).map(([a,b])=>`<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join("")}</dl>
+          <div class="src"><span class="muted">Hai un bisogno simile?</span>${c.fonte?`<a class="btn sm" href="${esc(c.fonte)}" target="_blank" rel="noopener">Fonte ↗</a>`:""}</div></div>
+      </div>`).join(""):`<div class="ghost"><b>Casi da raccogliere.</b><br>Nessun lavoro o nome in vetrina senza consenso: questa scheda si completa con l'isola.</div>`}
+    </section>
+    ${i.note?`<section class="sec"><h2>Note <em>del censimento.</em></h2><p>${esc(i.note)}</p></section>`:""}
+    <p class="foot">Scheda ${i.stato==="network"?"del network di partenza":"da fonti pubbliche, non approvata dall'isola"} · verifica ${esc(window.ORBITA_VERIFICA)} · completezza ${completezza(i)}% · le fasce di budget sono stime ORBITA da confermare.</p>
+  </div>
+  <div class="cta"><div class="wrap">
+    <span class="mono muted">Contatto diretto, ORBITA non e' nel mezzo</span>
+    <span style="display:flex;gap:8px"><a class="btn solid" href="${esc(contatto)}" target="_blank" rel="noopener">Contatta</a><button class="btn" id="cp">Chiedi un pitch</button></span>
+  </div></div>`;
+}
+
+function viewCensimento(){
+  const L=isole().sort((a,b)=>completezza(b)-completezza(a));
+  const net=L.filter(i=>i.stato==="network").length, casi=L.reduce((a,i)=>a+(i.casi||[]).length,0);
+  return `<div class="wrap" style="padding-top:26px;padding-bottom:50px">
+    <p class="mono muted">T-02 · L'INFRASTRUTTURA</p>
+    <h1 style="font-size:clamp(30px,7vw,46px);margin:8px 0 10px">Il censimento.</h1>
+    <p class="muted" style="max-width:36em">${L.length} isole, ${net} dal network di partenza, ${casi} casi con fonte. Ogni scheda dice quanto e' completa: si passa alla fase successiva solo con dati completi.</p>
+    <div class="modes" style="margin:16px 0 18px">
+      <button class="btn solid" id="exc">Esporta CSV</button><button class="btn" id="exj">Esporta JSON</button>
+      <label class="btn" style="cursor:pointer">Importa JSON<input type="file" id="imp" accept=".json,application/json" hidden></label>
+      ${loadExtra().length?`<button class="btn sm" id="clr">Rimuovi import (${loadExtra().length})</button>`:""}
+    </div>
+    <div class="tbl"><table><thead><tr><th>Isola</th><th>Tipo</th><th>Filiera</th><th>Da</th><th>Casi</th><th>Completezza</th></tr></thead><tbody>
+    ${L.map(i=>`<tr><td><a href="#/isola/${encodeURIComponent(i.id)}"><b>${esc(i.nome)}</b></a><br><span class="tag${i.stato==="network"?" net":""}">${i.stato}</span></td>
+      <td>${esc(i.tipo)}<br><span class="muted">${esc(i.citta||"")}</span></td>
+      <td>${filiereOf(i).map(f=>`<span class="dot f-${f}" title="${FILIERA[f].l}"></span>`).join("")}</td>
+      <td class="mono">${i.budgetMin==null?"n.d.":i.budgetMin+"k"}</td><td class="mono">${(i.casi||[]).length}</td>
+      <td class="mono"><span class="bar5"><i style="width:${completezza(i)}%"></i></span>${completezza(i)}%</td></tr>`).join("")}
+    </tbody></table></div>
+    <p class="foot">Formato import: un array JSON di isole con gli stessi campi di data.js (id, nome, tipo, citta, servizi, settori, budgetMin, pitch, sito, casi[]). Le isole importate restano in questo browser. Servizi validi: ${Object.keys(SERVIZI).join(", ")}.</p>
+  </div>`;
+}
+function bindCensimento(){
+  const dl=(name,data,type)=>{ const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([data],{type})); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); };
+  $("#exj").onclick=()=>dl("orbita-isole.json",JSON.stringify(isole(),null,2),"application/json");
+  $("#exc").onclick=()=>{
+    const cols=["id","nome","stato","tipo","citta","dimensione","budgetMin","servizi","settori","casi","sito","completezza"];
+    const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+    const rows=isole().map(i=>[i.id,i.nome,i.stato,i.tipo,i.citta,i.dimensione,i.budgetMin,(i.servizi||[]).join("|"),(i.settori||[]).join("|"),(i.casi||[]).map(c=>c.titolo+" / "+c.cliente).join("|"),i.sito,completezza(i)].map(q).join(","));
+    dl("orbita-censimento.csv","﻿"+cols.join(",")+"\n"+rows.join("\n"),"text/csv");
+  };
+  $("#imp").onchange=e=>{ const f=e.target.files[0]; if(!f) return; f.text().then(t=>{
+    const arr=JSON.parse(t); if(!Array.isArray(arr)) throw new Error("serve un array");
+    const ok=arr.filter(x=>x&&x.id&&x.nome); const m=new Map(loadExtra().map(x=>[x.id,x])); ok.forEach(x=>m.set(x.id,x));
+    localStorage.setItem(LS,JSON.stringify([...m.values()])); toast(ok.length+" isole importate"); route();
+  }).catch(err=>toast("Import fallito: "+err.message)); };
+  const c=$("#clr"); if(c) c.onclick=()=>{ localStorage.removeItem(LS); route(); };
+}
+
+/* ── router ────────────────────────────────────────────────────── */
+function route(){
+  document.removeEventListener("click",modeClick);
+  const h=location.hash.replace(/^#/,"")||"/", app=$("#app"), m=h.match(/^\/isola\/(.+)$/);
+  document.querySelectorAll(".nav a").forEach(a=>a.classList.toggle("on",(a.dataset.r==="censimento")===(h==="/censimento")&&!m));
+  if(m){ const id=decodeURIComponent(m[1]); app.innerHTML=viewIsola(id); const i=isole().find(x=>x.id===id);
+    const cp=$("#cp"); if(cp&&i) cp.onclick=()=>copy(brief(i),"Brief copiato per "+i.nome); scrollTo(0,0); document.title=(i?i.nome+" · ":"")+"ORBITA"; return; }
+  document.title="ORBITA · Trova l'isola giusta";
+  if(h==="/censimento"){ app.innerHTML=viewCensimento(); bindCensimento(); return; }
+  app.innerHTML=viewCerca(); bindCerca();
+}
+addEventListener("hashchange",route);
+route();
+})();
+</script>
+</body>
+</html>

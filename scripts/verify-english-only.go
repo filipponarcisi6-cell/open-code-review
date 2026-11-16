@@ -77,6 +77,7 @@ var allowedPrefixes = []struct{ prefix, reason string }{
 	{"extensions/vscode/package.nls.", "translated UI copy for the extension manifest bundles"},
 	{"extensions/frontend/src/shared/i18n.ts", "translated UI copy for the extension webview"},
 	{"extensions/idea/src/main/kotlin/com/alibaba/opencodereview/idea/model/HostStrings.kt", "host-side mirror of the webview i18n table"},
+	{"orbita/", "standalone Italian-language prototype (ORBITA partner finder) with Italian UI copy and data"},
 }
 
 // exemptMarker on a line suppresses the report for that line. The trailing
